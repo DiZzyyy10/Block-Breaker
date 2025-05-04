@@ -37,9 +37,12 @@ int block[BLOCK_NUM_Y][BLOCK_NUM_X] =
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
 };
+
+int stoneBlock[BLOCK_NUM_X] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
 int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
 
 //Kim's declaration
+bool isStoneBlockThere(int by, int bx);
 bool isDeleteBlock(int by, int bx);
 int getBlockNumY(int by);
 int getBlockNumX(int bx);
@@ -58,6 +61,7 @@ int levelFourThreshold = 5000;
 
 int stoneBlockX1 = -1; 
 int stoneBlockX2 = -1;
+int stoneBlockX3 = -1;
 
 //sound 
 int bgmHandler = -1;
@@ -71,7 +75,8 @@ int currentBarSizeX;
 void Draw()
 {
 	static int GrHandle = LoadGraph( "gamebg.bmp" );//背景画像登録 640x480
-	static int colorBlock = LoadGraph("block.bmp");//背景画像登録 640x480
+	static int colorBlock = LoadGraph("block.bmp");
+	static int stoneBlockHandle = LoadGraph("stone.bmp");
 	DrawGraph( 0 , 0 , GrHandle , FALSE );//背景を描く
 	// === MODIFIED: Use current_bar_size_x for drawing ===
 	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);;//BARを描く
@@ -110,17 +115,21 @@ void Draw()
 		}
 	}
 
-	//drawing stones for level 3
-	if (currentLevel >= 3)
+	//drawing stones for level 2
+	if (currentLevel >= 2)
 	{
 		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y;
 		if (stoneBlockX1 >= 0 && stoneBlockX1 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX1 * BLOCK_SIZE_X, stoneY, stoneBlockX1 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 255, 255), TRUE);
+			DrawRectGraph(stoneBlockX1 * BLOCK_SIZE_X, stoneY, 0, 0, 40,20, stoneBlockHandle, FALSE, FALSE);
 		}
 		if (stoneBlockX2 >= 0 && stoneBlockX2 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX2 * BLOCK_SIZE_X, stoneY, stoneBlockX2 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 255, 255), TRUE);
+			DrawRectGraph(stoneBlockX2 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
+		}
+		if (stoneBlockX3 >= 0 && stoneBlockX3 < BLOCK_NUM_X)
+		{
+			DrawRectGraph(stoneBlockX3 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
 		}
 	}
 
@@ -250,6 +259,24 @@ void MoveBall()
 		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
 	}
 
+	//check if the stone is there
+	else if (isStoneBlockThere(bally1, ball_x) == true && getBlockNumX(ball_x) >= 0)
+	{
+		vy = -vy;
+	}
+	else if (isStoneBlockThere(bally2, ball_x) == true && getBlockNumX(ball_x) >= 0)
+	{
+		vy = -vy;
+	}
+	else if (isStoneBlockThere(ball_y, ballx1) == true && getBlockNumX(ballx1) >= 0)
+	{
+		vx = -vx;
+	}
+	else if (isStoneBlockThere(ball_y, ballx2) == true && getBlockNumX(ballx2) >= 0)
+	{
+		vx = -vx;
+	}
+
 		//until here
 	ball_x += vx;
 	ball_y += vy;
@@ -261,17 +288,42 @@ void levelTracker(int scoreTmpData)
 	if (scoreTmpData >= levelTwoThreshold && scoreTmpData <= levelThreeThreshold) //level 2 here
 	{
 		currentLevel = 2;
-		currentBarSizeX = BAR_SIZE_X/2;
+		//setting the block to ACTIVE
+		stoneBlock[stoneBlockX1] = 1;
+		stoneBlock[stoneBlockX2] = 1;
+		stoneBlock[stoneBlockX3] = 1;
+		
 	}
 	else if (scoreTmpData > levelThreeThreshold && scoreTmpData <= levelFourThreshold)
 	{
 		currentLevel = 3;
+		currentBarSizeX = BAR_SIZE_X/2;
 	}
 	else if (scoreTmpData > levelFourThreshold) 
 	{
 		currentLevel = 4;
 	}
 }
+
+
+
+
+
+
+
+//check if a stone is there
+bool isStoneBlockThere(int by, int bx)
+{
+	if (stoneBlock[getBlockNumX(bx)] == 1 && (by>160) && (by < 180))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 
 //check if block is there
 bool isDeleteBlock(int by, int bx)
@@ -332,6 +384,11 @@ int getBlockNumY(int by)
 }
 
 
+
+
+
+
+
 bool gameOverCheck()
 {
 	if (ball_y - BALL_SIZE > WINDOW_SIZE_Y) {
@@ -371,6 +428,10 @@ void resetGame()
 			block[y][x] = 1; // Set block back to visible
 		}
 	}
+	//delete all stone block back
+	for (int i = 0; i < BLOCK_NUM_X; ++i) {
+		stoneBlock[i] = 0; // Set stone block back to invisible
+	}
 
 	//generate the stone's pos hereeeee 
 	stoneBlockX1 = rand() % BLOCK_NUM_X;
@@ -378,6 +439,10 @@ void resetGame()
 	{
 		stoneBlockX2 = rand() % BLOCK_NUM_X;
 	} while (stoneBlockX1 == stoneBlockX2);
+	do
+	{
+		stoneBlockX3 = rand() % BLOCK_NUM_X;
+	} while (stoneBlockX3 == stoneBlockX1 || stoneBlockX3 == stoneBlockX2);
 }
 
 bool gameWinCheck()
