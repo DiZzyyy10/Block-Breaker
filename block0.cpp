@@ -42,6 +42,7 @@ int stoneBlock[BLOCK_NUM_X] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
 
 //Kim's declaration
+bool isStoneBlockThere(int by, int bx);
 bool isDeleteBlock(int by, int bx);
 int getBlockNumY(int by);
 int getBlockNumX(int bx);
@@ -74,7 +75,8 @@ int currentBarSizeX;
 void Draw()
 {
 	static int GrHandle = LoadGraph( "gamebg.bmp" );//背景画像登録 640x480
-	static int colorBlock = LoadGraph("block.bmp");//背景画像登録 640x480
+	static int colorBlock = LoadGraph("block.bmp");
+	static int stoneBlockHandle = LoadGraph("stone.bmp");
 	DrawGraph( 0 , 0 , GrHandle , FALSE );//背景を描く
 	// === MODIFIED: Use current_bar_size_x for drawing ===
 	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);;//BARを描く
@@ -119,15 +121,15 @@ void Draw()
 		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y;
 		if (stoneBlockX1 >= 0 && stoneBlockX1 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX1 * BLOCK_SIZE_X, stoneY, stoneBlockX1 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
+			DrawRectGraph(stoneBlockX1 * BLOCK_SIZE_X, stoneY, 0, 0, 40,20, stoneBlockHandle, FALSE, FALSE);
 		}
 		if (stoneBlockX2 >= 0 && stoneBlockX2 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX2 * BLOCK_SIZE_X, stoneY, stoneBlockX2 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
+			DrawRectGraph(stoneBlockX2 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
 		}
 		if (stoneBlockX3 >= 0 && stoneBlockX3 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX3 * BLOCK_SIZE_X, stoneY, stoneBlockX3 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
+			DrawRectGraph(stoneBlockX3 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
 		}
 	}
 
@@ -257,6 +259,24 @@ void MoveBall()
 		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
 	}
 
+	//check if the stone is there
+	else if (isStoneBlockThere(bally1, ball_x) == true && getBlockNumX(ball_x) >= 0)
+	{
+		vy = -vy;
+	}
+	else if (isStoneBlockThere(bally2, ball_x) == true && getBlockNumX(ball_x) >= 0)
+	{
+		vy = -vy;
+	}
+	else if (isStoneBlockThere(ball_y, ballx1) == true && getBlockNumX(ballx1) >= 0)
+	{
+		vx = -vx;
+	}
+	else if (isStoneBlockThere(ball_y, ballx2) == true && getBlockNumX(ballx2) >= 0)
+	{
+		vx = -vx;
+	}
+
 		//until here
 	ball_x += vx;
 	ball_y += vy;
@@ -289,6 +309,20 @@ void levelTracker(int scoreTmpData)
 
 
 
+
+
+//check if a stone is there
+bool isStoneBlockThere(int by, int bx)
+{
+	if (stoneBlock[getBlockNumX(bx)] == 1 && (by>160) && (by < 180))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 //check if block is there
@@ -393,6 +427,10 @@ void resetGame()
 		for (int x = 0; x < BLOCK_NUM_X; ++x) {
 			block[y][x] = 1; // Set block back to visible
 		}
+	}
+	//delete all stone block back
+	for (int i = 0; i < BLOCK_NUM_X; ++i) {
+		stoneBlock[i] = 0; // Set stone block back to invisible
 	}
 
 	//generate the stone's pos hereeeee 
