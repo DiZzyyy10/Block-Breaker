@@ -37,6 +37,8 @@ int block[BLOCK_NUM_Y][BLOCK_NUM_X] =
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
 };
+
+int stoneBlock[BLOCK_NUM_X] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
 int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
 
 //Kim's declaration
@@ -58,6 +60,7 @@ int levelFourThreshold = 5000;
 
 int stoneBlockX1 = -1; 
 int stoneBlockX2 = -1;
+int stoneBlockX3 = -1;
 
 //sound 
 int bgmHandler = -1;
@@ -110,17 +113,21 @@ void Draw()
 		}
 	}
 
-	//drawing stones for level 3
-	if (currentLevel >= 3)
+	//drawing stones for level 2
+	if (currentLevel >= 2)
 	{
 		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y;
 		if (stoneBlockX1 >= 0 && stoneBlockX1 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX1 * BLOCK_SIZE_X, stoneY, stoneBlockX1 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 255, 255), TRUE);
+			DrawBox(stoneBlockX1 * BLOCK_SIZE_X, stoneY, stoneBlockX1 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
 		}
 		if (stoneBlockX2 >= 0 && stoneBlockX2 < BLOCK_NUM_X)
 		{
-			DrawBox(stoneBlockX2 * BLOCK_SIZE_X, stoneY, stoneBlockX2 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 255, 255), TRUE);
+			DrawBox(stoneBlockX2 * BLOCK_SIZE_X, stoneY, stoneBlockX2 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
+		}
+		if (stoneBlockX3 >= 0 && stoneBlockX3 < BLOCK_NUM_X)
+		{
+			DrawBox(stoneBlockX3 * BLOCK_SIZE_X, stoneY, stoneBlockX3 * BLOCK_SIZE_X + BLOCK_SIZE_X, stoneY + BLOCK_SIZE_Y, GetColor(255, 0, 0), TRUE);
 		}
 	}
 
@@ -261,17 +268,28 @@ void levelTracker(int scoreTmpData)
 	if (scoreTmpData >= levelTwoThreshold && scoreTmpData <= levelThreeThreshold) //level 2 here
 	{
 		currentLevel = 2;
-		currentBarSizeX = BAR_SIZE_X/2;
+		//setting the block to ACTIVE
+		stoneBlock[stoneBlockX1] = 1;
+		stoneBlock[stoneBlockX2] = 1;
+		stoneBlock[stoneBlockX3] = 1;
+		
 	}
 	else if (scoreTmpData > levelThreeThreshold && scoreTmpData <= levelFourThreshold)
 	{
 		currentLevel = 3;
+		currentBarSizeX = BAR_SIZE_X/2;
 	}
 	else if (scoreTmpData > levelFourThreshold) 
 	{
 		currentLevel = 4;
 	}
 }
+
+
+
+
+
+
 
 //check if block is there
 bool isDeleteBlock(int by, int bx)
@@ -332,6 +350,11 @@ int getBlockNumY(int by)
 }
 
 
+
+
+
+
+
 bool gameOverCheck()
 {
 	if (ball_y - BALL_SIZE > WINDOW_SIZE_Y) {
@@ -378,6 +401,10 @@ void resetGame()
 	{
 		stoneBlockX2 = rand() % BLOCK_NUM_X;
 	} while (stoneBlockX1 == stoneBlockX2);
+	do
+	{
+		stoneBlockX3 = rand() % BLOCK_NUM_X;
+	} while (stoneBlockX3 == stoneBlockX1 || stoneBlockX3 == stoneBlockX2);
 }
 
 bool gameWinCheck()
