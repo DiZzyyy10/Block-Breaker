@@ -416,8 +416,8 @@ void resetGame()
 	ball_y = bar_y - BALL_SIZE;
 
 
-	int possibleValueForVx[4] = { -2, -1, 1, 2 };
-	int tmp = rand() % 4;
+	int possibleValueForVx[2] = { -1, 1};
+	int tmp = rand() % 2;
 	//set the speed back
 	vx = possibleValueForVx[tmp];
 	vy = -1;
