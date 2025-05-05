@@ -65,6 +65,7 @@ int getBlockNumY(int by);
 int getBlockNumX(int bx);
 void levelTracker(int scoreTmpData);
 void SpawnNewBall(const Ball& parentBall);
+void specialBlockSpawner(int spawnNum);
 
 void resetGame();
 bool gameWinCheck();
@@ -76,6 +77,7 @@ int score = 0;
 int levelTwoThreshold = 500;
 int levelThreeThreshold = 1000;
 int levelFourThreshold = 4000;
+int levelFiveThreshold = 8000;
 
 int stoneBlockX1 = -1; 
 int stoneBlockX2 = -1;
@@ -99,92 +101,72 @@ int currentBarSizeX;
 //描画関数
 void Draw()
 {
-	static int GrHandle = LoadGraph( "gamebg.bmp" );//背景画像登録 640x480
+	// Load graphics handles (static ensures they are loaded only once)
+	static int GrHandle = LoadGraph("gamebg.bmp");
 	static int colorBlock = LoadGraph("block.bmp");
 	static int stoneBlockHandle = LoadGraph("stone.bmp");
 	static int specialBlockHandle = LoadGraph("specialBlock.bmp");
 
-	DrawGraph( 0 , 0 , GrHandle , FALSE );//背景を描く
-	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);;//BARを描く
+	// Optional: Add error checks for loading
+	if (GrHandle == -1) { DrawFormatString(10, 30, GetColor(255, 0, 0), "Error: gamebg.bmp failed!"); }
+	if (colorBlock == -1) { DrawFormatString(10, 40, GetColor(255, 0, 0), "Error: block.bmp failed!"); }
+	if (stoneBlockHandle == -1) { DrawFormatString(10, 50, GetColor(255, 0, 0), "Error: stone.bmp failed!"); }
+	if (specialBlockHandle == -1) { DrawFormatString(10, 60, GetColor(255, 0, 0), "Error: specialBlock.bmp failed!"); }
 
-	//drawing the ball(s)?? cough* cough*
+	// Draw Background
+	DrawGraph(0, 0, GrHandle, FALSE);
+
+	// Draw Bar
+	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);
+
+	// Draw Ball(s)
 	for (int i = 0; i < maxNumOfBall; ++i) {
 		if (balls[i].active) {
 			DrawCircle(balls[i].x, balls[i].y, BALL_SIZE, GetColor(255, 255, 0), TRUE);
 		}
 	}
 
-
+	// Draw Score and Level
 	DrawFormatString(10, 10, GetColor(255, 255, 255), "Score: %d  Level: %d", score, currentLevel);
-	for ( int y = 0; y < BLOCK_NUM_Y; y++ )
+
+	// Draw Breakable and Special Blocks
+	for (int y = 0; y < BLOCK_NUM_Y; y++)
 	{
 		for (int x = 0; x < BLOCK_NUM_X; x++)
 		{
-			if (block[y][x] == 1)
-			{
-				if (y == 0)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 0, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-				else if (y == 1)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 40, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-				else if (y == 2)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 80, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-				else if (y == 3)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 120, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-				else if (y == 4)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 160, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-				else if (y == 5)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 200, 0, 40, 20, colorBlock, FALSE, FALSE);
-				}
-			}
-			else if (block[y][x] == 2)
-			{
-				if (y == 0)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 0, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
-				else if (y == 1)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 40, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
-				else if (y == 2)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 80, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
-				else if (y == 3)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 120, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
-				else if (y == 4)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 160, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
-				else if (y == 5)
-				{
-					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 200, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
-				}
+			int blockType = block[y][x]; // Get block type
 
+			if (blockType == 1) // Normal Block
+			{
+				// Draw normal block based on row y (uses colorBlock sprite sheet)
+				int srcX = y * BLOCK_SIZE_X;
+				if (srcX >= 240) srcX = 200; // Clamp srcX
+				// === MODIFIED: Changed TransFlag to FALSE ===
+				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
+					srcX, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
+					colorBlock, FALSE, FALSE); // Use FALSE for transparency
 			}
+			else if (blockType == 2) // Special Block
+			{
+				// Draw the special block graphic (assumes a single 40x20 image)
+				// === MODIFIED: Changed TransFlag to FALSE ===
+				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
+					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y, // Use full source image
+					specialBlockHandle, FALSE, FALSE); // Use FALSE for transparency
+			}
+			// blockType == 0 is empty, draw nothing
 		}
 	}
 
-	//drawing stones for level 2
+	// Draw Level 2 Stone Blocks
 	if (currentLevel >= 2)
 	{
-		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y;
+		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y; // Y position below breakable blocks
+		// Draw the three stone blocks at their random X positions
 		if (stoneBlockX1 >= 0 && stoneBlockX1 < BLOCK_NUM_X)
 		{
-			DrawRectGraph(stoneBlockX1 * BLOCK_SIZE_X, stoneY, 0, 0, 40,20, stoneBlockHandle, FALSE, FALSE);
+			// Stone blocks likely don't need transparency, keep FALSE
+			DrawRectGraph(stoneBlockX1 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
 		}
 		if (stoneBlockX2 >= 0 && stoneBlockX2 < BLOCK_NUM_X)
 		{
@@ -234,15 +216,15 @@ void MoveBar()
 			bar_x -= 2;
 		}
 	}
-	else if (currentLevel == 4)
+	else if (currentLevel >= 4)
 	{
 		if (CheckHitKey(KEY_INPUT_RIGHT) && (bar_x + currentBarSizeX) < WINDOW_SIZE_X) // → キー を押したか
 		{
-			bar_x = bar_x + 2;
+			bar_x = bar_x + 3;
 		}
 		else if (CheckHitKey(KEY_INPUT_LEFT) && (bar_x) > 0)
 		{
-			bar_x -= 2;
+			bar_x -= 3;
 		}
 	}
 }
@@ -438,42 +420,59 @@ void levelTracker(int scoreTmpData)
 		//currentBarSizeX = BAR_SIZE_X / 2;
 
 		if (previousLevel < 3) {//tryna fill the gaps with special blocks
-			int gapX[BLOCK_NUM_Y * BLOCK_NUM_X];
-			int gapY[BLOCK_NUM_Y * BLOCK_NUM_X];
-			int gapCount = 0;
-			for (int y = 0; y < BLOCK_NUM_Y; ++y) {
-				for (int x = 0; x < BLOCK_NUM_X; ++x) {
-					if (block[y][x] == 0) { // check for empty spot
-						gapX[gapCount] = x;
-						gapY[gapCount] = y;
-						gapCount++;
-					}
-				}
-			}
-
-			int numToSpawn = 3;
-
-			for (int i = 0; i < numToSpawn; ++i) {
-				if (gapCount <= 0) break;
-
-				int randomIndex = rand() % gapCount;
-
-				// Place the special block
-				block[gapY[randomIndex]][gapX[randomIndex]] = 2;
-
-				gapX[randomIndex] = gapX[gapCount - 1];
-				gapY[randomIndex] = gapY[gapCount - 1];
-				gapCount--;
-			}
+			specialBlockSpawner(5);
 		}
-		else if (scoreTmpData > levelFourThreshold)
-		{
-			currentLevel = 4;
+		
+	}
+	else if (scoreTmpData > levelFourThreshold && scoreTmpData <= levelFiveThreshold)
+	{
+		int previousLevel = currentLevel;
+		currentLevel = 4;
+
+		if (previousLevel < 4) {
+			specialBlockSpawner(5);
+		}
+	}
+	else if (scoreTmpData > levelFiveThreshold)
+	{
+		int previousLevel = currentLevel;
+		currentLevel = 5;
+		if (previousLevel < 5) {
+			specialBlockSpawner(5);
 		}
 	}
 }
 
+void specialBlockSpawner(int spawnNum)
+{
+	int gapX[BLOCK_NUM_Y * BLOCK_NUM_X];
+	int gapY[BLOCK_NUM_Y * BLOCK_NUM_X];
+	int gapCount = 0;
+	for (int y = 0; y < BLOCK_NUM_Y; ++y) {
+		for (int x = 0; x < BLOCK_NUM_X; ++x) {
+			if (block[y][x] == 0) { // check for empty spot
+				gapX[gapCount] = x;
+				gapY[gapCount] = y;
+				gapCount++;
+			}
+		}
+	}
 
+	int numToSpawn = 5;
+
+	for (int i = 0; i < numToSpawn; ++i) {
+		if (gapCount <= 0) break;
+
+		int randomIndex = rand() % gapCount;
+
+		// Place the special block
+		block[gapY[randomIndex]][gapX[randomIndex]] = 2;
+
+		gapX[randomIndex] = gapX[gapCount - 1];
+		gapY[randomIndex] = gapY[gapCount - 1];
+		gapCount--;
+	}
+}
 
 //check if a stone is there
 bool isStoneBlockThere(int by, int bx)
