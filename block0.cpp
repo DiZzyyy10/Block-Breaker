@@ -26,8 +26,6 @@ int bar_y = WINDOW_SIZE_Y * 9 / 10;//bar上端のy座標
 int bar_x = WINDOW_SIZE_X / 2 - BAR_SIZE_X / 2;//bar左端のx座標
 int ball_x = bar_x + BAR_SIZE_X / 2;//ball中心のx座標
 int ball_y = bar_y - BALL_SIZE;//ball中心のy座標
-int vx;
-int vy;
 int block[BLOCK_NUM_Y][BLOCK_NUM_X] = 
 {
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
@@ -40,6 +38,9 @@ int block[BLOCK_NUM_Y][BLOCK_NUM_X] =
 
 int stoneBlock[BLOCK_NUM_X] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
 int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
+
+
+
 
 //Kim's declaration
 bool isStoneBlockThere(int by, int bx);
@@ -71,23 +72,49 @@ int barHitSoundHandler = -1;
 //bar size
 int currentBarSizeX;
 
+//new implementation of the ball
+const int maxNumOfBall = 20;
+
+struct Ball
+{
+	int x, y;
+	int vx, vy;
+	bool active;
+};
+
+Ball balls[maxNumOfBall];
+
+int aactiveBallNum = 0;
+
+//end here for my declaration
+
+
+
+
 //描画関数
 void Draw()
 {
 	static int GrHandle = LoadGraph( "gamebg.bmp" );//背景画像登録 640x480
 	static int colorBlock = LoadGraph("block.bmp");
 	static int stoneBlockHandle = LoadGraph("stone.bmp");
+	static int specialBlockHandle = LoadGraph("specialBlock.bmp");
 	DrawGraph( 0 , 0 , GrHandle , FALSE );//背景を描く
-	// === MODIFIED: Use current_bar_size_x for drawing ===
 	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);;//BARを描く
-	DrawCircle(ball_x, ball_y, BALL_SIZE, GetColor( 255, 255, 0 ), TRUE);//BALLを描く
+
+	//drawing the ball(s)?? ><
+	for (int i = 0; i < maxNumOfBall; ++i) {
+		if (balls[i].active) {
+			DrawCircle(balls[i].x, balls[i].y, BALL_SIZE, GetColor(255, 255, 0), TRUE);
+		}
+	}
+
 	DrawFormatString(10, 10, GetColor(255, 255, 255), "Score: %d  Level: %d", score, currentLevel);
 	for ( int y = 0; y < BLOCK_NUM_Y; y++ )
 	{
 		for (int x = 0; x < BLOCK_NUM_X; x++)
 		{
-			if (block[y][x])
-				//DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 0, 0, 40, 20, colorBlock, FALSE, FALSE);
+			if (block[y][x] == 1)
+			{
 				if (y == 0)
 				{
 					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 0, 0, 40, 20, colorBlock, FALSE, FALSE);
@@ -112,6 +139,35 @@ void Draw()
 				{
 					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 200, 0, 40, 20, colorBlock, FALSE, FALSE);
 				}
+			}
+			else if (block[y][x] == 2)
+			{
+				if (y == 0)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 0, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+				else if (y == 1)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 40, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+				else if (y == 2)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 80, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+				else if (y == 3)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 120, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+				else if (y == 4)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 160, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+				else if (y == 5)
+				{
+					DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y, 200, 0, 40, 20, specialBlockHandle, FALSE, FALSE);
+				}
+
+			}
 		}
 	}
 
@@ -296,18 +352,44 @@ void levelTracker(int scoreTmpData)
 	}
 	else if (scoreTmpData > levelThreeThreshold && scoreTmpData <= levelFourThreshold)
 	{
+		int previousLevel = currentLevel;
 		currentLevel = 3;
-		currentBarSizeX = BAR_SIZE_X/2;
+		//currentBarSizeX = BAR_SIZE_X / 2;
+
+		if (previousLevel < 3) {//tryna fill the gaps with special blocks
+			int gapX[BLOCK_NUM_Y * BLOCK_NUM_X];
+			int gapY[BLOCK_NUM_Y * BLOCK_NUM_X];
+			int gapCount = 0;
+			for (int y = 0; y < BLOCK_NUM_Y; ++y) {
+				for (int x = 0; x < BLOCK_NUM_X; ++x) {
+					if (block[y][x] == 0) { // check for empty spot
+						gapX[gapCount] = x;
+						gapY[gapCount] = y;
+						gapCount++;
+					}
+				}
+			}
+
+			int numToSpawn = 3;
+
+			for (int i = 0; i < numToSpawn; ++i) {
+				if (gapCount <= 0) break;
+
+				int randomIndex = rand() % gapCount;
+
+				// Place the special block
+				block[gapY[randomIndex]][gapX[randomIndex]] = 2;
+
+				gapX[randomIndex] = gapX[gapCount - 1];
+				gapY[randomIndex] = gapY[gapCount - 1];
+				gapCount--;
+			}
 	}
 	else if (scoreTmpData > levelFourThreshold) 
 	{
 		currentLevel = 4;
 	}
 }
-
-
-
-
 
 
 
