@@ -77,7 +77,7 @@ int score = 0;
 int levelTwoThreshold = 500;
 int levelThreeThreshold = 1000;
 int levelFourThreshold = 4000;
-int levelFiveThreshold = 8000;
+int levelFiveThreshold = 12000;
 
 int stoneBlockX1 = -1; 
 int stoneBlockX2 = -1;
@@ -392,7 +392,7 @@ void SpawnNewBall(const Ball& parentBall) {
 			balls[i].y = parentBall.y;
 
 			balls[i].vx = -parentBall.vx;
-			balls[i].vy = parentBall.vy;
+			balls[i].vy = -parentBall.vy;
 
 			activeBallCount++;
 			return; // Spawned one ball, exit function
