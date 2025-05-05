@@ -43,37 +43,9 @@ int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンド�
 
 
 //Kim's declaration
-bool isStoneBlockThere(int by, int bx);
-bool isDeleteBlock(int by, int bx);
-int getBlockNumY(int by);
-int getBlockNumX(int bx);
-void levelTracker(int scoreTmpData);
-
-void resetGame();
-bool gameWinCheck();
-bool playAgainPrompt();
-
-
-int currentLevel = 1;
-int score = 0;
-int levelTwoThreshold = 100;
-int levelThreeThreshold = 200;
-int levelFourThreshold = 5000;
-
-int stoneBlockX1 = -1; 
-int stoneBlockX2 = -1;
-int stoneBlockX3 = -1;
-
-//sound 
-int bgmHandler = -1;
-int blockHitSoundHandler = -1;
-int barHitSoundHandler = -1;
-
-//bar size
-int currentBarSizeX;
 
 //new implementation of the ball
-const int maxNumOfBall = 20;
+const int maxNumOfBall = 100;
 
 struct Ball
 {
@@ -84,7 +56,40 @@ struct Ball
 
 Ball balls[maxNumOfBall];
 
-int aactiveBallNum = 0;
+int activeBallCount = 0;
+
+
+bool isStoneBlockThere(int by, int bx);
+bool isDeleteBlock(int by, int bx);
+int getBlockNumY(int by);
+int getBlockNumX(int bx);
+void levelTracker(int scoreTmpData);
+void SpawnNewBall(const Ball& parentBall);
+
+void resetGame();
+bool gameWinCheck();
+bool playAgainPrompt();
+
+
+int currentLevel = 1;
+int score = 0;
+int levelTwoThreshold = 500;
+int levelThreeThreshold = 1000;
+int levelFourThreshold = 4000;
+
+int stoneBlockX1 = -1; 
+int stoneBlockX2 = -1;
+int stoneBlockX3 = -1;
+
+//sound 
+int bgmHandler = -1;
+int blockHitSoundHandler = -1;
+int barHitSoundHandler = -1;
+int specialHitSoundHandler = -1;
+int stoneHitSoundHandler = -1;
+
+//bar size
+int currentBarSizeX;
 
 //end here for my declaration
 
@@ -98,15 +103,17 @@ void Draw()
 	static int colorBlock = LoadGraph("block.bmp");
 	static int stoneBlockHandle = LoadGraph("stone.bmp");
 	static int specialBlockHandle = LoadGraph("specialBlock.bmp");
+
 	DrawGraph( 0 , 0 , GrHandle , FALSE );//背景を描く
 	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);;//BARを描く
 
-	//drawing the ball(s)?? ><
+	//drawing the ball(s)?? cough* cough*
 	for (int i = 0; i < maxNumOfBall; ++i) {
 		if (balls[i].active) {
 			DrawCircle(balls[i].x, balls[i].y, BALL_SIZE, GetColor(255, 255, 0), TRUE);
 		}
 	}
+
 
 	DrawFormatString(10, 10, GetColor(255, 255, 255), "Score: %d  Level: %d", score, currentLevel);
 	for ( int y = 0; y < BLOCK_NUM_Y; y++ )
@@ -240,105 +247,179 @@ void MoveBar()
 	}
 }
 
-//ボールの座標を変える関数 反射を考える
 void MoveBall()
 {
-	int ballx1 = ball_x - BALL_SIZE;//ballの左端
-	int ballx2 = ball_x + BALL_SIZE;//ballの右端
-	int bally1 = ball_y - BALL_SIZE;//ballの上端
-	int bally2 = ball_y + BALL_SIZE;//ballの下端
-
-
-	//反射を考える
-
-	if (ballx2 > WINDOW_SIZE_X)
+	for (int i = 0; i < maxNumOfBall; ++i)
 	{
-		vx = -vx;
-	}
-	else if (bally1 < 0)
-	{
-		vy = -vy;
-	}
-	else if (ballx1 < 0)
-	{
-		vx = -vx;
-	}
-	else if ((bally2 > bar_y) && (bally2 < bar_y + BAR_SIZE_Y))
-	{
-		if ((ball_x > bar_x) && (ball_x < bar_x + currentBarSizeX))
-		{
-			vy = -vy;
-			PlaySoundMem(barHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+		if (!balls[i].active) {
+			continue;
 		}
-	}
-	//test part is below. Note!!!! -> gotta check all sides. Bottom, top, left, right!
-	//add points when collision is detected here
-	else if (isDeleteBlock(bally1, ball_x) == true && getBlockNumY(bally1) >= 0 && getBlockNumX(ball_x)>= 0)
-	{
-		vy = -vy;
-		block[getBlockNumY(bally1)][getBlockNumX(ball_x)] = 0;
-		score += (BLOCK_NUM_Y - getBlockNumY(bally1)) * 100;
-		levelTracker(score);
 
-		//sound effect
-		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+		int ballx1 = balls[i].x - BALL_SIZE;//left edge
+		int ballx2 = balls[i].x + BALL_SIZE;//right edge
+		int bally1 = balls[i].y - BALL_SIZE;//top edge
+		int bally2 = balls[i].y + BALL_SIZE; //bottom edge
 
-	}
-	else if (isDeleteBlock(ball_y, ballx2) == true && getBlockNumY(ball_y) >= 0 && getBlockNumX(ballx2) >= 0)
-	{
-		vx = -vx;
-		block[getBlockNumY(ball_y)][getBlockNumX(ballx2)] = 0;
-		score += (BLOCK_NUM_Y - getBlockNumY(ball_y)) * 100;
-		levelTracker(score);
+		bool bounced = false;
 
-		//sound effect
-		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-	}
-	else if (isDeleteBlock(ball_y, ballx1) == true && getBlockNumY(ball_y) >= 0 && getBlockNumX(ballx1) >= 0)
-	{
-		vx = -vx;
-		block[getBlockNumY(ball_y)][getBlockNumX(ballx1)] = 0;
-		score += (BLOCK_NUM_Y - getBlockNumY(ball_y)) * 100;
-		levelTracker(score);
+		// Right wall
+		if (ballx2 > WINDOW_SIZE_X && balls[i].vx > 0) {
+			balls[i].vx = -balls[i].vx;
+			balls[i].x = WINDOW_SIZE_X - BALL_SIZE;
+			bounced = true;
+		}
+		// Left wall
+		else if (ballx1 < 0 && balls[i].vx < 0) {
+			balls[i].vx = -balls[i].vx;
+			balls[i].x = BALL_SIZE;
+			bounced = true;
+		}
 
-		//sound effect
-		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-	}
-	else if (isDeleteBlock(bally2, ball_x) == true && getBlockNumY(bally2) >= 0 && getBlockNumX(ball_x) >= 0)
-	{
-		vy = -vy;
-		block[getBlockNumY(bally2)][getBlockNumX(ball_x)] = 0;
-		score += (BLOCK_NUM_Y - getBlockNumY(bally2)) * 100;
-		levelTracker(score);
+		// Top wall
+		if (bally1 < 0 && balls[i].vy < 0) {
+			balls[i].vy = -balls[i].vy;
+			balls[i].y = BALL_SIZE;
+			bounced = true;
+		}
+		// collision with Bar
+		else if (bally2 > bar_y && bally1 < (bar_y + BAR_SIZE_Y) && balls[i].vy > 0)
+		{
+			if ((ballx2 > bar_x) && (ballx1 < bar_x + currentBarSizeX))
+			{
+				balls[i].vy = -balls[i].vy;
+				balls[i].y = bar_y - BALL_SIZE;
+				PlaySoundMem(barHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+				bounced = true;
+			}
+		}
 
-		//sound effect
-		PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-	}
+		
+		else if (currentLevel >= 2 && !bounced) 
+		{
+			bool stoneCollisionProcessed = false;
+			if (isStoneBlockThere(bally1, balls[i].x) && balls[i].vy < 0) {
+				balls[i].vy = -balls[i].vy; // Bounce vertically
+				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE); 
+				stoneCollisionProcessed = true;
+				bounced = true; // Mark that a bounce occurred this frame
+			}
+			// Check bottom edge collision with stone (less likely to hit bottom first)
+			else if (isStoneBlockThere(bally2, balls[i].x) && balls[i].vy > 0) {
+				balls[i].vy = -balls[i].vy; // Bounce vertically
+				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+				stoneCollisionProcessed = true;
+				bounced = true;
+			}
+			// Check left edge collision with stone
+			else if (isStoneBlockThere(balls[i].y, ballx1) && balls[i].vx < 0) {
+				balls[i].vx = -balls[i].vx; // Bounce horizontally
+				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+				stoneCollisionProcessed = true;
+				bounced = true;
+			}
+			// Check right edge collision with stone
+			else if (isStoneBlockThere(balls[i].y, ballx2) && balls[i].vx > 0) {
+				balls[i].vx = -balls[i].vx; // Bounce horizontally
+				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+				stoneCollisionProcessed = true;
+				bounced = true;
+			}
+		}
+		
 
-	//check if the stone is there
-	else if (isStoneBlockThere(bally1, ball_x) == true && getBlockNumX(ball_x) >= 0)
-	{
-		vy = -vy;
-	}
-	else if (isStoneBlockThere(bally2, ball_x) == true && getBlockNumX(ball_x) >= 0)
-	{
-		vy = -vy;
-	}
-	else if (isStoneBlockThere(ball_y, ballx1) == true && getBlockNumX(ballx1) >= 0)
-	{
-		vx = -vx;
-	}
-	else if (isStoneBlockThere(ball_y, ballx2) == true && getBlockNumX(ballx2) >= 0)
-	{
-		vx = -vx;
-	}
+		if (!bounced)
+		{
+			bool blockCollisionProcessed = false;
 
-		//until here
-	ball_x += vx;
-	ball_y += vy;
+			int checkPoints[4][2] = {
+				{balls[i].x, bally1}, // Top Center
+				{balls[i].x, bally2}, // Bottom Center
+				{ballx1, balls[i].y}, // Left Center
+				{ballx2, balls[i].y}  // Right Center
+			};
+
+			int bounceAxis[4] = { 1, 1, 0, 0 }; // 1=vertical, 0=horizontal
+
+			for (int p = 0; p < 4 && !blockCollisionProcessed; ++p) {
+				int checkX = checkPoints[p][0];
+				int checkY = checkPoints[p][1];
+
+				int hitBlockY = getBlockNumY(checkY);
+				int hitBlockX = getBlockNumX(checkX);
+
+				if (hitBlockY >= 0 && hitBlockY < BLOCK_NUM_Y && hitBlockX >= 0 && hitBlockX < BLOCK_NUM_X)
+				{
+					int blockType = block[hitBlockY][hitBlockX];
+
+					if (blockType > 0)
+					{
+						//Bounce
+						if (bounceAxis[p] == 1) { //Bounce vertically
+							if ((p == 0 && balls[i].vy < 0) || (p == 1 && balls[i].vy > 0)) {
+								balls[i].vy = -balls[i].vy;
+							}
+						}
+						else { //Bounce horizontally
+							if ((p == 2 && balls[i].vx < 0) || (p == 3 && balls[i].vx > 0)) {
+								balls[i].vx = -balls[i].vx;
+							}
+						}
+
+						//Handle actions after the bounce
+						if (blockType == 1) // Normal Block Hit
+						{
+							block[hitBlockY][hitBlockX] = 0;
+							score += (BLOCK_NUM_Y - hitBlockY) * 100;
+							levelTracker(score);
+							PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+						}
+						else if (blockType == 2) // Special Block Hit
+						{
+							block[hitBlockY][hitBlockX] = 0;
+							score += 250;
+							levelTracker(score);
+							PlaySoundMem(specialHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+
+							SpawnNewBall(balls[i]);
+						}
+
+						blockCollisionProcessed = true;
+						bounced = true; // Also set bounced here to prevent further checks this frame
+					}
+				}
+			}
+		}
+
+		if (balls[i].active) {
+			balls[i].x += balls[i].vx;
+			balls[i].y += balls[i].vy;
+		}
+	} 
 }
 
-//keep tract of level
+
+void SpawnNewBall(const Ball& parentBall) {
+	if (activeBallCount >= maxNumOfBall) {
+		return; // Cannot spawn more balls
+	}
+
+	for (int i = 0; i < maxNumOfBall; ++i) {
+		if (!balls[i].active) { // Found an inactive slot
+			balls[i].active = true;
+			balls[i].x = parentBall.x; // Start near the parent ball
+			balls[i].y = parentBall.y;
+
+			balls[i].vx = -parentBall.vx;
+			balls[i].vy = parentBall.vy;
+
+			activeBallCount++;
+			return; // Spawned one ball, exit function
+		}
+	}
+}
+
+
+
 void levelTracker(int scoreTmpData)
 {
 	if (scoreTmpData >= levelTwoThreshold && scoreTmpData <= levelThreeThreshold) //level 2 here
@@ -384,10 +465,11 @@ void levelTracker(int scoreTmpData)
 				gapY[randomIndex] = gapY[gapCount - 1];
 				gapCount--;
 			}
-	}
-	else if (scoreTmpData > levelFourThreshold) 
-	{
-		currentLevel = 4;
+		}
+		else if (scoreTmpData > levelFourThreshold)
+		{
+			currentLevel = 4;
+		}
 	}
 }
 
@@ -468,19 +550,27 @@ int getBlockNumY(int by)
 
 
 
-
-
-
 bool gameOverCheck()
 {
-	if (ball_y - BALL_SIZE > WINDOW_SIZE_Y) {
-		// Game Over!
+	bool anyBallActive = false;
+	for (int i = 0; i < maxNumOfBall; ++i) {
+		if (balls[i].active) {
+			if (balls[i].y - BALL_SIZE > WINDOW_SIZE_Y) {
+				balls[i].active = false; 
+				activeBallCount--;
+			}
+			else {
+				anyBallActive = true; 
+			}
+		}
+	}
+
+	if (!anyBallActive && activeBallCount <= 0) {
 		DrawFormatString(WINDOW_SIZE_X / 2 - 50, WINDOW_SIZE_Y / 2, GetColor(255, 0, 0), "GAME OVER!");
-		ScreenFlip(); // Show the game over message
+		ScreenFlip(); 
 		return true;
 	}
-	else
-	{
+	else {
 		return false;
 	}
 }
@@ -490,32 +580,41 @@ void resetGame()
 {
 	score = 0;
 	currentLevel = 1;
-	currentBarSizeX = BAR_SIZE_X;
-	
-	//set the bar position to its original pos n the ball pos too
+	currentBarSizeX = BAR_SIZE_X; 
+
+	// Reset bar position
 	bar_x = WINDOW_SIZE_X / 2 - BAR_SIZE_X / 2;
-	ball_x = bar_x + BAR_SIZE_X / 2;
-	ball_y = bar_y - BALL_SIZE;
 
+	// Initialize Balls
+	activeBallCount = 1; 
+	balls[0].active = true;
+	balls[0].x = bar_x + currentBarSizeX / 2; 
+	balls[0].y = bar_y - BALL_SIZE;
 
-	int possibleValueForVx[2] = { -1, 1};
+	// Set initial velocity for the first ball
+	int possibleValueForVx[4] = {-1, 1};
 	int tmp = rand() % 2;
-	//set the speed back
-	vx = possibleValueForVx[tmp];
-	vy = -1;
-	
-	//set all blocks backkkk 
+	balls[0].vx = possibleValueForVx[tmp];
+	balls[0].vy = -1; 
+
+	// Deactivate all other balls
+	for (int i = 1; i < maxNumOfBall; ++i) {
+		balls[i].active = false;
+	}
+
+	// Reset all blocks back
 	for (int y = 0; y < BLOCK_NUM_Y; ++y) {
 		for (int x = 0; x < BLOCK_NUM_X; ++x) {
-			block[y][x] = 1; // Set block back to visible
+			block[y][x] = 1;
 		}
 	}
-	//delete all stone block back
+
+
+	//code for the stone blocks
 	for (int i = 0; i < BLOCK_NUM_X; ++i) {
-		stoneBlock[i] = 0; // Set stone block back to invisible
+		stoneBlock[i] = 0; 
 	}
 
-	//generate the stone's pos hereeeee 
 	stoneBlockX1 = rand() % BLOCK_NUM_X;
 	do
 	{
@@ -529,29 +628,29 @@ void resetGame()
 
 bool gameWinCheck()
 {
-	bool allBlocksDestroyed = true;
+	bool blocksRemaining = false;
 	for (int y = 0; y < BLOCK_NUM_Y; y++)
 	{
 		for (int x = 0; x < BLOCK_NUM_X; x++)
 		{
-			if (block[y][x] == 1)
+			if (block[y][x] == 1 || block[y][x] == 2)
 			{
-				allBlocksDestroyed = false;
+				blocksRemaining = true;
 				break;
 			}
 		}
-		if (allBlocksDestroyed == false)
+		if (blocksRemaining)
 		{
 			break;
 		}
 	}
-	if (allBlocksDestroyed ==  true)
+
+	if (!blocksRemaining) 
 	{
 		DrawFormatString(WINDOW_SIZE_X / 2 - 50, WINDOW_SIZE_Y / 2, GetColor(0, 255, 0), "YOU WIN!");
 		ScreenFlip();
 		return true;
 	}
-	//if not we gonna return false
 	return false;
 }
 
@@ -581,7 +680,7 @@ bool playAgainPrompt()
 }
 
 // WinMain関数
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	// タイトルを 変更
 	SetMainWindowText( "ブロック崩し見本 by 橋本" ) ;
@@ -598,6 +697,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	bgmHandler = LoadSoundMem("bgm.mp3");
 	blockHitSoundHandler = LoadSoundMem("block_hit.wav");
 	barHitSoundHandler = LoadSoundMem("bar_hit.wav");
+	specialHitSoundHandler = LoadSoundMem("block_hit.wav");
+	stoneHitSoundHandler = LoadSoundMem("block_hit.wav");
 
 	if (bgmHandler == -1 || blockHitSoundHandler == -1 || barHitSoundHandler == -1)
 	{
