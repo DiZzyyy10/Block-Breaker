@@ -56,10 +56,13 @@ bool playAgainPrompt();
 
 int currentLevel = 1;
 int score = 0;
-int levelTwoThreshold = 500;
-int levelThreeThreshold = 1000;
-int levelFourThreshold = 2500; // Adjusted threshold for stone blocks
-int levelFiveThreshold = 4000;
+// Lowered thresholds and added more levels
+int levelTwoThreshold = 300;    // Lowered
+int levelThreeThreshold = 700;  // Lowered
+int levelFourThreshold = 2000;  // Lowered (Stones appear)
+int levelFiveThreshold = 4000;  // Lowered
+int levelSixThreshold = 8000;   // New Level 6
+int levelSevenThreshold = 12000; // New Level 7
 
 // Removed: stoneBlockX1, stoneBlockX2, stoneBlockX3
 
@@ -339,23 +342,25 @@ void levelTracker(int scoreTmpData)
 {
 	int previousLevel = currentLevel;
 
+	// Determine current level based on score
 	if (scoreTmpData < levelTwoThreshold) currentLevel = 1;
 	else if (scoreTmpData < levelThreeThreshold) currentLevel = 2;
 	else if (scoreTmpData < levelFourThreshold) currentLevel = 3;
 	else if (scoreTmpData < levelFiveThreshold) currentLevel = 4;
-	else currentLevel = 5;
+	else if (scoreTmpData < levelSixThreshold) currentLevel = 5;  // Adjusted for Level 6
+	else if (scoreTmpData < levelSevenThreshold) currentLevel = 6; // Adjusted for Level 7
+	else currentLevel = 7; // Max level is now 7
 
 
 	if (currentLevel > previousLevel)
 	{
 		if (currentLevel == 2)
 		{
-			// Removed activation of decorative stone blocks
+			specialBlockSpawner(2); // Spawn 2 special blocks at Level 2
 		}
 		else if (currentLevel == 3)
 		{
-			//currentBarSizeX = BAR_SIZE_X / 2; // Optionally make bar smaller earlier
-			specialBlockSpawner(3);
+			specialBlockSpawner(3); // Spawn 3 special blocks at Level 3
 		}
 		else if (currentLevel == 4)
 		{
@@ -363,30 +368,60 @@ void levelTracker(int scoreTmpData)
 			specialBlockSpawner(4);
 
 			// Spawn Indestructible Blocks (Type 3) by turning existing blocks
-			// --- MODIFIED PATTERN ---
-			// Example: Turn specific blocks in row 2 (index 1) into stone
-			int stoneY = 1; // Row index 1 (second row from top)
-			int stoneCols[] = { 3, 7, 11 }; // Columns to turn into stone
+			int stoneY = 1;
+			int stoneCols[] = { 3, 7, 11 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
 
 			for (int i = 0; i < numStoneCols; ++i) {
 				int x = stoneCols[i];
-				if (x >= 0 && x < BLOCK_NUM_X) { // Check if column index is valid
-					if (block[stoneY][x] == 1) { // Only replace normal blocks
+				if (x >= 0 && x < BLOCK_NUM_X) {
+					if (block[stoneY][x] == 1) {
 						block[stoneY][x] = 3;
 					}
 				}
 			}
-			// --- END MODIFIED PATTERN ---
 		}
 		else if (currentLevel == 5)
 		{
 			currentBarSizeX = BAR_SIZE_X / 2; // Keep bar small
 			specialBlockSpawner(5);
-			// Optionally add more indestructible blocks or change pattern for level 5
-			// Example: Add more stones in row 4 (index 3)
+			// Add more stones in row 3
 			int stoneY = 3;
 			int stoneCols[] = { 2, 6, 10, 14 };
+			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
+			for (int i = 0; i < numStoneCols; ++i) {
+				int x = stoneCols[i];
+				if (x >= 0 && x < BLOCK_NUM_X) {
+					if (block[stoneY][x] == 1) {
+						block[stoneY][x] = 3;
+					}
+				}
+			}
+		}
+		else if (currentLevel == 6) // New Level 6 logic
+		{
+			currentBarSizeX = BAR_SIZE_X / 2;
+			specialBlockSpawner(6); // Spawn more special blocks
+			// Add even more stones? Maybe row 0?
+			int stoneY = 0;
+			int stoneCols[] = { 1, 5, 9, 13 };
+			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
+			for (int i = 0; i < numStoneCols; ++i) {
+				int x = stoneCols[i];
+				if (x >= 0 && x < BLOCK_NUM_X) {
+					if (block[stoneY][x] == 1) {
+						block[stoneY][x] = 3;
+					}
+				}
+			}
+		}
+		else if (currentLevel == 7) // New Level 7 logic
+		{
+			currentBarSizeX = BAR_SIZE_X / 2;
+			specialBlockSpawner(7); // Spawn lots of special blocks
+			// Add stones in row 5?
+			int stoneY = 5;
+			int stoneCols[] = { 0, 4, 8, 12 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
 			for (int i = 0; i < numStoneCols; ++i) {
 				int x = stoneCols[i];
@@ -663,7 +698,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			if (gameWinCheck() == true)
 			{
-				break;
+				break;     
 			}
 
 			WaitTimer(4);
