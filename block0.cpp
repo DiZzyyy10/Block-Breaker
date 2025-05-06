@@ -26,17 +26,9 @@ int bar_y = WINDOW_SIZE_Y * 9 / 10;//bar上端のy座標
 int bar_x = WINDOW_SIZE_X / 2 - BAR_SIZE_X / 2;//bar左端のx座標
 int ball_x = bar_x + BAR_SIZE_X / 2;//ball中心のx座標
 int ball_y = bar_y - BALL_SIZE;//ball中心のy座標
-int block[BLOCK_NUM_Y][BLOCK_NUM_X] =
-{
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,},
-};
-
-int stoneBlock[BLOCK_NUM_X] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+// Block array: 0=empty, 1=normal, 2=special, 3=indestructible stone
+int block[BLOCK_NUM_Y][BLOCK_NUM_X];
+// Removed: int stoneBlock[BLOCK_NUM_X] = { 0, ... };
 int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
 
 const int maxNumOfBall = 100;
@@ -51,8 +43,8 @@ struct Ball
 Ball balls[maxNumOfBall];
 int activeBallCount = 0;
 
-bool isStoneBlockThere(int by, int bx);
-bool isDeleteBlock(int by, int bx);
+// Removed: bool isStoneBlockThere(int by, int bx);
+bool isDeleteBlock(int by, int bx); // Keep if used elsewhere, MoveBall handles types now
 int getBlockNumY(int by);
 int getBlockNumX(int bx);
 void levelTracker(int scoreTmpData);
@@ -66,12 +58,10 @@ int currentLevel = 1;
 int score = 0;
 int levelTwoThreshold = 500;
 int levelThreeThreshold = 1000;
-int levelFourThreshold = 4000;
-int levelFiveThreshold = 12000;
+int levelFourThreshold = 2500; // Adjusted threshold for stone blocks
+int levelFiveThreshold = 4000;
 
-int stoneBlockX1 = -1;
-int stoneBlockX2 = -1;
-int stoneBlockX3 = -1;
+// Removed: stoneBlockX1, stoneBlockX2, stoneBlockX3
 
 int bgmHandler = -1;
 int blockHitSoundHandler = -1;
@@ -85,8 +75,8 @@ void Draw()
 {
 	static int GrHandle = LoadGraph("gamebg.bmp");
 	static int colorBlock = LoadGraph("block.bmp");
-	static int stoneBlockHandle = LoadGraph("stone.bmp");
-	static int specialBlockHandle = LoadGraph("specialBlock.bmp");
+	static int stoneBlockHandle = LoadGraph("stone.bmp"); // Handle for type 3
+	static int specialBlockHandle = LoadGraph("specialBlock.bmp"); // Handle for type 2
 
 	if (GrHandle == -1) { DrawFormatString(10, 30, GetColor(255, 0, 0), "Error: gamebg.bmp failed!"); }
 	if (colorBlock == -1) { DrawFormatString(10, 40, GetColor(255, 0, 0), "Error: block.bmp failed!"); }
@@ -124,74 +114,71 @@ void Draw()
 					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
 					specialBlockHandle, FALSE, FALSE);
 			}
+			else if (blockType == 3) // Draw indestructible stone block
+			{
+				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
+					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
+					stoneBlockHandle, FALSE, FALSE);
+			}
 		}
 	}
-
-	if (currentLevel >= 2)
-	{
-		int stoneY = BLOCK_TOP_Y + BLOCK_NUM_Y * BLOCK_SIZE_Y;
-		if (stoneBlockX1 >= 0 && stoneBlockX1 < BLOCK_NUM_X)
-		{
-			DrawRectGraph(stoneBlockX1 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
-		}
-		if (stoneBlockX2 >= 0 && stoneBlockX2 < BLOCK_NUM_X)
-		{
-			DrawRectGraph(stoneBlockX2 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
-		}
-		if (stoneBlockX3 >= 0 && stoneBlockX3 < BLOCK_NUM_X)
-		{
-			DrawRectGraph(stoneBlockX3 * BLOCK_SIZE_X, stoneY, 0, 0, 40, 20, stoneBlockHandle, FALSE, FALSE);
-		}
-	}
-
+	// Removed decorative stone drawing section
 }
 
 void MoveBar()
 {
+	int moveSpeed = 2; // Keep original speed logic
+	if (currentLevel >= 4) {
+		moveSpeed = 3;
+	}
+
 	if (currentLevel == 1)
 	{
 		if (CheckHitKey(KEY_INPUT_RIGHT) && (bar_x + currentBarSizeX) < WINDOW_SIZE_X)
 		{
-			bar_x = bar_x + 2;
+			bar_x = bar_x + moveSpeed;
 		}
 		else if (CheckHitKey(KEY_INPUT_LEFT) && (bar_x) > 0)
 		{
-			bar_x -= 2;
+			bar_x -= moveSpeed;
 		}
 	}
 	else if (currentLevel == 2)
 	{
 		if (CheckHitKey(KEY_INPUT_RIGHT) && (bar_x + currentBarSizeX) < WINDOW_SIZE_X)
 		{
-			bar_x = bar_x + 2;
+			bar_x = bar_x + moveSpeed;
 		}
 		else if (CheckHitKey(KEY_INPUT_LEFT) && (bar_x) > 0)
 		{
-			bar_x -= 2;
+			bar_x -= moveSpeed;
 		}
 	}
 	else if (currentLevel == 3)
 	{
 		if (CheckHitKey(KEY_INPUT_RIGHT) && (bar_x + currentBarSizeX) < WINDOW_SIZE_X)
 		{
-			bar_x = bar_x + 2;
+			bar_x = bar_x + moveSpeed;
 		}
 		else if (CheckHitKey(KEY_INPUT_LEFT) && (bar_x) > 0)
 		{
-			bar_x -= 2;
+			bar_x -= moveSpeed;
 		}
 	}
 	else if (currentLevel >= 4)
 	{
 		if (CheckHitKey(KEY_INPUT_RIGHT) && (bar_x + currentBarSizeX) < WINDOW_SIZE_X)
 		{
-			bar_x = bar_x + 3;
+			bar_x = bar_x + moveSpeed;
 		}
 		else if (CheckHitKey(KEY_INPUT_LEFT) && (bar_x) > 0)
 		{
-			bar_x -= 3;
+			bar_x -= moveSpeed;
 		}
 	}
+	// Ensure bar doesn't go out of bounds after move
+	if ((bar_x + currentBarSizeX) > WINDOW_SIZE_X) bar_x = WINDOW_SIZE_X - currentBarSizeX;
+	if (bar_x < 0) bar_x = 0;
 }
 
 void MoveBall()
@@ -236,34 +223,7 @@ void MoveBall()
 			}
 		}
 
-		else if (currentLevel >= 2 && !bounced)
-		{
-			bool stoneCollisionProcessed = false;
-			if (isStoneBlockThere(bally1, balls[i].x) && balls[i].vy < 0) {
-				balls[i].vy = -balls[i].vy;
-				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-				stoneCollisionProcessed = true;
-				bounced = true;
-			}
-			else if (isStoneBlockThere(bally2, balls[i].x) && balls[i].vy > 0) {
-				balls[i].vy = -balls[i].vy;
-				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-				stoneCollisionProcessed = true;
-				bounced = true;
-			}
-			else if (isStoneBlockThere(balls[i].y, ballx1) && balls[i].vx < 0) {
-				balls[i].vx = -balls[i].vx;
-				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-				stoneCollisionProcessed = true;
-				bounced = true;
-			}
-			else if (isStoneBlockThere(balls[i].y, ballx2) && balls[i].vx > 0) {
-				balls[i].vx = -balls[i].vx;
-				PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
-				stoneCollisionProcessed = true;
-				bounced = true;
-			}
-		}
+		// Removed decorative stone collision check (else if currentLevel >= 2...)
 
 
 		if (!bounced)
@@ -290,7 +250,7 @@ void MoveBall()
 				{
 					int blockType = block[hitBlockY][hitBlockX];
 
-					if (blockType > 0)
+					if (blockType > 0) // Hit any active block (1, 2, or 3)
 					{
 						if (bounceAxis[p] == 1) {
 							if ((p == 0 && balls[i].vy < 0) || (p == 1 && balls[i].vy > 0)) {
@@ -315,9 +275,16 @@ void MoveBall()
 							block[hitBlockY][hitBlockX] = 0;
 							score += 250;
 							levelTracker(score);
-							PlaySoundMem(specialHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+							if (specialHitSoundHandler != -1) PlaySoundMem(specialHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+							else PlaySoundMem(blockHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
 
 							SpawnNewBall(balls[i]);
+						}
+						else if (blockType == 3) // Indestructible Stone Hit
+						{
+							if (stoneHitSoundHandler != -1) PlaySoundMem(stoneHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+							else PlaySoundMem(barHitSoundHandler, DX_PLAYTYPE_BACK, TRUE);
+							// No score, no destruction
 						}
 
 						blockCollisionProcessed = true;
@@ -360,7 +327,6 @@ void SpawnNewBall(const Ball& parentBall) {
 				balls[i].vy = (parentBall.vy != 0) ? -parentBall.vy : -1;
 			}
 
-
 			activeBallCount++;
 			return;
 		}
@@ -384,21 +350,52 @@ void levelTracker(int scoreTmpData)
 	{
 		if (currentLevel == 2)
 		{
-			if (stoneBlockX1 != -1) stoneBlock[stoneBlockX1] = 1;
-			if (stoneBlockX2 != -1) stoneBlock[stoneBlockX2] = 1;
-			if (stoneBlockX3 != -1) stoneBlock[stoneBlockX3] = 1;
+			// Removed activation of decorative stone blocks
 		}
 		else if (currentLevel == 3)
 		{
+			//currentBarSizeX = BAR_SIZE_X / 2; // Optionally make bar smaller earlier
 			specialBlockSpawner(3);
 		}
 		else if (currentLevel == 4)
 		{
+			currentBarSizeX = BAR_SIZE_X / 2; // Make bar smaller for Level 4+
 			specialBlockSpawner(4);
+
+			// Spawn Indestructible Blocks (Type 3) by turning existing blocks
+			// --- MODIFIED PATTERN ---
+			// Example: Turn specific blocks in row 2 (index 1) into stone
+			int stoneY = 1; // Row index 1 (second row from top)
+			int stoneCols[] = { 3, 7, 11 }; // Columns to turn into stone
+			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
+
+			for (int i = 0; i < numStoneCols; ++i) {
+				int x = stoneCols[i];
+				if (x >= 0 && x < BLOCK_NUM_X) { // Check if column index is valid
+					if (block[stoneY][x] == 1) { // Only replace normal blocks
+						block[stoneY][x] = 3;
+					}
+				}
+			}
+			// --- END MODIFIED PATTERN ---
 		}
 		else if (currentLevel == 5)
 		{
+			currentBarSizeX = BAR_SIZE_X / 2; // Keep bar small
 			specialBlockSpawner(5);
+			// Optionally add more indestructible blocks or change pattern for level 5
+			// Example: Add more stones in row 4 (index 3)
+			int stoneY = 3;
+			int stoneCols[] = { 2, 6, 10, 14 };
+			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
+			for (int i = 0; i < numStoneCols; ++i) {
+				int x = stoneCols[i];
+				if (x >= 0 && x < BLOCK_NUM_X) {
+					if (block[stoneY][x] == 1) {
+						block[stoneY][x] = 3;
+					}
+				}
+			}
 		}
 	}
 }
@@ -422,7 +419,6 @@ void specialBlockSpawner(int numToSpawn)
 		numToSpawn = gapCount;
 	}
 
-
 	for (int i = 0; i < numToSpawn; ++i) {
 		if (gapCount <= 0) break;
 
@@ -436,18 +432,7 @@ void specialBlockSpawner(int numToSpawn)
 	}
 }
 
-bool isStoneBlockThere(int by, int bx)
-{
-	int blockX = getBlockNumX(bx);
-	if (blockX != -1 && stoneBlock[blockX] == 1 && (by > 160) && (by < 180))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
+// Removed: isStoneBlockThere function
 
 bool isDeleteBlock(int by, int bx)
 {
@@ -535,23 +520,11 @@ void resetGame()
 
 	for (int y = 0; y < BLOCK_NUM_Y; ++y) {
 		for (int x = 0; x < BLOCK_NUM_X; ++x) {
-			block[y][x] = 1;
+			block[y][x] = 1; // Reset all to normal breakable
 		}
 	}
 
-	for (int i = 0; i < BLOCK_NUM_X; ++i) {
-		stoneBlock[i] = 0;
-	}
-
-	stoneBlockX1 = rand() % BLOCK_NUM_X;
-	do
-	{
-		stoneBlockX2 = rand() % BLOCK_NUM_X;
-	} while (stoneBlockX1 == stoneBlockX2);
-	do
-	{
-		stoneBlockX3 = rand() % BLOCK_NUM_X;
-	} while (stoneBlockX3 == stoneBlockX1 || stoneBlockX3 == stoneBlockX2);
+	// Removed code for decorative stone blocks
 }
 
 bool gameWinCheck()
@@ -561,6 +534,7 @@ bool gameWinCheck()
 	{
 		for (int x = 0; x < BLOCK_NUM_X; x++)
 		{
+			// Win if only empty (0) or indestructible (3) blocks remain
 			if (block[y][x] == 1 || block[y][x] == 2)
 			{
 				blocksRemaining = true;
@@ -592,7 +566,6 @@ bool playAgainPrompt()
 	else {
 		DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 50), TRUE);
 	}
-
 
 	DrawFormatString(WINDOW_SIZE_X / 2 - 80, WINDOW_SIZE_Y / 2 - 20, GetColor(255, 255, 255), "Play Again? (Y/N)");
 	ScreenFlip();
@@ -628,16 +601,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bgmHandler = LoadSoundMem("bgm.mp3");
 	blockHitSoundHandler = LoadSoundMem("block_hit.wav");
 	barHitSoundHandler = LoadSoundMem("bar_hit.wav");
-	specialHitSoundHandler = LoadSoundMem("block_hit.wav");
-	stoneHitSoundHandler = LoadSoundMem("block_hit.wav");
+	specialHitSoundHandler = LoadSoundMem("special_hit.wav"); // Use distinct sound if available
+	stoneHitSoundHandler = LoadSoundMem("bar_hit.wav"); // Reuse bar sound for stone
 
 	if (bgmHandler == -1 || blockHitSoundHandler == -1 || barHitSoundHandler == -1)
 	{
 		DxLib_End();
 		return -1;
 	}
-	if (specialHitSoundHandler == -1) specialHitSoundHandler = blockHitSoundHandler;
-	if (stoneHitSoundHandler == -1) stoneHitSoundHandler = barHitSoundHandler;
+	if (specialHitSoundHandler == -1) specialHitSoundHandler = blockHitSoundHandler; // Fallback
+	if (stoneHitSoundHandler == -1) stoneHitSoundHandler = barHitSoundHandler; // Fallback
 
 	PlaySoundMem(bgmHandler, DX_PLAYTYPE_LOOP, TRUE);
 
@@ -645,8 +618,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 		resetGame();
 
-		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64); 
-		DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE); 
+		// Alpha Blending for Start Screen (Optional, for consistency)
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
+		DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
 		Draw();
@@ -674,9 +648,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			MoveBar();
 			MoveBall();
 
+			// Alpha Blending Fade Effect
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
-			DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE); 
-			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0); 
+			DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
 			Draw();
 
