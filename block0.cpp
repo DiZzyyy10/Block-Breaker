@@ -53,13 +53,16 @@ void specialBlockSpawner(int spawnNum);
 void resetGame();
 bool gameWinCheck();
 bool playAgainPrompt();
+bool gameOverCheck(); // Keep forward declaration
+void ResetBallAfterLifeLost(); // Added forward declaration
 
 int currentLevel = 1;
 int score = 0;
+int playerLives = 3; // Added player lives global variable
 // Lowered thresholds and added more levels
 int levelTwoThreshold = 300;    // Lowered
 int levelThreeThreshold = 700;  // Lowered
-int levelFourThreshold = 2000;  // Lowered (Stones appear)
+int levelFourThreshold = 2000;  // Lowered (Stones appear) 
 int levelFiveThreshold = 4000;  // Lowered
 int levelSixThreshold = 8000;   // New Level 6
 int levelSevenThreshold = 12000; // New Level 7
@@ -96,6 +99,7 @@ void Draw()
 	}
 
 	DrawFormatString(10, 10, GetColor(255, 255, 255), "Score: %d  Level: %d", score, currentLevel);
+	DrawFormatString(WINDOW_SIZE_X - 100, 10, GetColor(255, 255, 255), "Lives: %d", playerLives); // Draw lives
 
 	for (int y = 0; y < BLOCK_NUM_Y; y++)
 	{
@@ -191,6 +195,14 @@ void MoveBall()
 		if (!balls[i].active) {
 			continue;
 		}
+
+		// Check if ball went off bottom BEFORE moving
+		if (balls[i].y - BALL_SIZE > WINDOW_SIZE_Y) {
+			balls[i].active = false;
+			activeBallCount--;
+			continue; // Skip rest of logic for this deactivated ball
+		}
+
 
 		int ballx1 = balls[i].x - BALL_SIZE;
 		int ballx2 = balls[i].x + BALL_SIZE;
@@ -368,6 +380,7 @@ void levelTracker(int scoreTmpData)
 			specialBlockSpawner(4);
 
 			// Spawn Indestructible Blocks (Type 3) by turning existing blocks
+
 			int stoneY = 1;
 			int stoneCols[] = { 3, 7, 11 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
@@ -380,12 +393,14 @@ void levelTracker(int scoreTmpData)
 					}
 				}
 			}
+
 		}
 		else if (currentLevel == 5)
 		{
 			currentBarSizeX = BAR_SIZE_X / 2; // Keep bar small
 			specialBlockSpawner(5);
-			// Add more stones in row 3
+			// Add more stones in row 3 
+
 			int stoneY = 3;
 			int stoneCols[] = { 2, 6, 10, 14 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
@@ -397,12 +412,14 @@ void levelTracker(int scoreTmpData)
 					}
 				}
 			}
+
 		}
 		else if (currentLevel == 6) // New Level 6 logic
 		{
 			currentBarSizeX = BAR_SIZE_X / 2;
 			specialBlockSpawner(6); // Spawn more special blocks
-			// Add even more stones? Maybe row 0?
+			// Add even more stones? Maybe row 0? 
+
 			int stoneY = 0;
 			int stoneCols[] = { 1, 5, 9, 13 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
@@ -414,12 +431,14 @@ void levelTracker(int scoreTmpData)
 					}
 				}
 			}
+
 		}
 		else if (currentLevel == 7) // New Level 7 logic
 		{
 			currentBarSizeX = BAR_SIZE_X / 2;
 			specialBlockSpawner(7); // Spawn lots of special blocks
-			// Add stones in row 5?
+			// Add stones in row 5? 
+
 			int stoneY = 5;
 			int stoneCols[] = { 0, 4, 8, 12 };
 			int numStoneCols = sizeof(stoneCols) / sizeof(stoneCols[0]);
@@ -431,6 +450,7 @@ void levelTracker(int scoreTmpData)
 					}
 				}
 			}
+
 		}
 	}
 }
@@ -505,29 +525,41 @@ int getBlockNumY(int by)
 	}
 }
 
+void ResetBallAfterLifeLost()
+{
+	WaitTimer(500);
+
+	activeBallCount = 1;
+	balls[0].active = true;
+	balls[0].x = bar_x + currentBarSizeX / 2;
+	balls[0].y = bar_y - BALL_SIZE;
+
+	int possibleValueForVx[2] = { -1, 1 };
+	int tmp = rand() % 2;
+	balls[0].vx = possibleValueForVx[tmp];
+	balls[0].vy = -1;
+
+	for (int i = 1; i < maxNumOfBall; ++i) {
+		balls[i].active = false;
+	}
+}
+
+
 bool gameOverCheck()
 {
-	bool anyBallActive = false;
-	for (int i = 0; i < maxNumOfBall; ++i) {
-		if (balls[i].active) {
-			if (balls[i].y - BALL_SIZE > WINDOW_SIZE_Y) {
-				balls[i].active = false;
-				activeBallCount--;
-			}
-			else {
-				anyBallActive = true;
-			}
+	if (activeBallCount <= 0) {
+		if (playerLives > 1) {
+			playerLives--;
+			ResetBallAfterLifeLost();
+			return false;
+		}
+		else {
+			DrawFormatString(WINDOW_SIZE_X / 2 - 50, WINDOW_SIZE_Y / 2, GetColor(255, 0, 0), "GAME OVER!");
+			ScreenFlip();
+			return true;
 		}
 	}
-
-	if (!anyBallActive && activeBallCount <= 0) {
-		DrawFormatString(WINDOW_SIZE_X / 2 - 50, WINDOW_SIZE_Y / 2, GetColor(255, 0, 0), "GAME OVER!");
-		ScreenFlip();
-		return true;
-	}
-	else {
-		return false;
-	}
+	return false;
 }
 
 
@@ -535,6 +567,7 @@ void resetGame()
 {
 	score = 0;
 	currentLevel = 1;
+	playerLives = 3; // Initialize lives
 	currentBarSizeX = BAR_SIZE_X;
 
 	bar_x = WINDOW_SIZE_X / 2 - BAR_SIZE_X / 2;
@@ -584,6 +617,9 @@ bool gameWinCheck()
 
 	if (!blocksRemaining)
 	{
+		for (int i = 0; i < maxNumOfBall; ++i) balls[i].active = false;
+		activeBallCount = 0;
+
 		DrawFormatString(WINDOW_SIZE_X / 2 - 50, WINDOW_SIZE_Y / 2, GetColor(0, 255, 0), "YOU WIN!");
 		ScreenFlip();
 		return true;
@@ -681,7 +717,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 			MoveBar();
-			MoveBall();
+			MoveBall(); // This now handles decrementing activeBallCount
 
 			// Alpha Blending Fade Effect
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
@@ -692,13 +728,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			ScreenFlip();
 
-			if (gameOverCheck() == true)
+			// Check end conditions AFTER drawing, so messages appear
+			if (gameOverCheck() == true) // This now handles lives logic
 			{
 				break;
 			}
 			if (gameWinCheck() == true)
 			{
-				break;     
+				break;
 			}
 
 			WaitTimer(4);
