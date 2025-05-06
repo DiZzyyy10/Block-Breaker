@@ -26,10 +26,8 @@ int bar_y = WINDOW_SIZE_Y * 9 / 10;//bar上端のy座標
 int bar_x = WINDOW_SIZE_X / 2 - BAR_SIZE_X / 2;//bar左端のx座標
 int ball_x = bar_x + BAR_SIZE_X / 2;//ball中心のx座標
 int ball_y = bar_y - BALL_SIZE;//ball中心のy座標
-// Block array: 0=empty, 1=normal, 2=special, 3=indestructible stone
 int block[BLOCK_NUM_Y][BLOCK_NUM_X];
-// Removed: int stoneBlock[BLOCK_NUM_X] = { 0, ... };
-int BlockHandle[BLOCK_NUM_Y];//ブロックのビットマップ画像ハンドル
+int BlockHandle[BLOCK_NUM_Y];
 
 const int maxNumOfBall = 100;
 
@@ -43,8 +41,7 @@ struct Ball
 Ball balls[maxNumOfBall];
 int activeBallCount = 0;
 
-// Removed: bool isStoneBlockThere(int by, int bx);
-bool isDeleteBlock(int by, int bx); // Keep if used elsewhere, MoveBall handles types now
+bool isDeleteBlock(int by, int bx); 
 int getBlockNumY(int by);
 int getBlockNumX(int bx);
 void levelTracker(int scoreTmpData);
@@ -53,21 +50,19 @@ void specialBlockSpawner(int spawnNum);
 void resetGame();
 bool gameWinCheck();
 bool playAgainPrompt();
-bool gameOverCheck(); // Keep forward declaration
-void ResetBallAfterLifeLost(); // Added forward declaration
+bool gameOverCheck(); 
+void ResetBallAfterLifeLost();
 
 int currentLevel = 1;
 int score = 0;
-int playerLives = 3; // Added player lives global variable
-// Lowered thresholds and added more levels
-int levelTwoThreshold = 300;    // Lowered
-int levelThreeThreshold = 700;  // Lowered
-int levelFourThreshold = 2000;  // Lowered (Stones appear) 
-int levelFiveThreshold = 4000;  // Lowered
-int levelSixThreshold = 8000;   // New Level 6
-int levelSevenThreshold = 12000; // New Level 7
+int playerLives = 3; 
+int levelTwoThreshold = 300;    
+int levelThreeThreshold = 700;  
+int levelFourThreshold = 2000;  
+int levelFiveThreshold = 4000;  
+int levelSixThreshold = 8000;   
+int levelSevenThreshold = 12000; 
 
-// Removed: stoneBlockX1, stoneBlockX2, stoneBlockX3
 
 int bgmHandler = -1;
 int blockHitSoundHandler = -1;
@@ -129,12 +124,11 @@ void Draw()
 			}
 		}
 	}
-	// Removed decorative stone drawing section
 }
 
 void MoveBar()
 {
-	int moveSpeed = 2; // Keep original speed logic
+	int moveSpeed = 2; 
 	if (currentLevel >= 4) {
 		moveSpeed = 3;
 	}
@@ -183,7 +177,6 @@ void MoveBar()
 			bar_x -= moveSpeed;
 		}
 	}
-	// Ensure bar doesn't go out of bounds after move
 	if ((bar_x + currentBarSizeX) > WINDOW_SIZE_X) bar_x = WINDOW_SIZE_X - currentBarSizeX;
 	if (bar_x < 0) bar_x = 0;
 }
@@ -200,7 +193,7 @@ void MoveBall()
 		if (balls[i].y - BALL_SIZE > WINDOW_SIZE_Y) {
 			balls[i].active = false;
 			activeBallCount--;
-			continue; // Skip rest of logic for this deactivated ball
+			continue;
 		}
 
 
@@ -238,7 +231,6 @@ void MoveBall()
 			}
 		}
 
-		// Removed decorative stone collision check (else if currentLevel >= 2...)
 
 
 		if (!bounced)
@@ -359,9 +351,9 @@ void levelTracker(int scoreTmpData)
 	else if (scoreTmpData < levelThreeThreshold) currentLevel = 2;
 	else if (scoreTmpData < levelFourThreshold) currentLevel = 3;
 	else if (scoreTmpData < levelFiveThreshold) currentLevel = 4;
-	else if (scoreTmpData < levelSixThreshold) currentLevel = 5;  // Adjusted for Level 6
-	else if (scoreTmpData < levelSevenThreshold) currentLevel = 6; // Adjusted for Level 7
-	else currentLevel = 7; // Max level is now 7
+	else if (scoreTmpData < levelSixThreshold) currentLevel = 5;  
+	else if (scoreTmpData < levelSevenThreshold) currentLevel = 6; 
+	else currentLevel = 7; 
 
 
 	if (currentLevel > previousLevel)
@@ -376,7 +368,6 @@ void levelTracker(int scoreTmpData)
 		}
 		else if (currentLevel == 4)
 		{
-			currentBarSizeX = BAR_SIZE_X / 2; // Make bar smaller for Level 4+
 			specialBlockSpawner(4);
 
 			// Spawn Indestructible Blocks (Type 3) by turning existing blocks
@@ -397,7 +388,7 @@ void levelTracker(int scoreTmpData)
 		}
 		else if (currentLevel == 5)
 		{
-			currentBarSizeX = BAR_SIZE_X / 2; // Keep bar small
+			currentBarSizeX = BAR_SIZE_X / 2; 
 			specialBlockSpawner(5);
 			// Add more stones in row 3 
 
@@ -414,11 +405,10 @@ void levelTracker(int scoreTmpData)
 			}
 
 		}
-		else if (currentLevel == 6) // New Level 6 logic
+		else if (currentLevel == 6)
 		{
 			currentBarSizeX = BAR_SIZE_X / 2;
-			specialBlockSpawner(6); // Spawn more special blocks
-			// Add even more stones? Maybe row 0? 
+			specialBlockSpawner(6);
 
 			int stoneY = 0;
 			int stoneCols[] = { 1, 5, 9, 13 };
@@ -433,11 +423,10 @@ void levelTracker(int scoreTmpData)
 			}
 
 		}
-		else if (currentLevel == 7) // New Level 7 logic
+		else if (currentLevel == 7) 
 		{
 			currentBarSizeX = BAR_SIZE_X / 2;
-			specialBlockSpawner(7); // Spawn lots of special blocks
-			// Add stones in row 5? 
+			specialBlockSpawner(7); 
 
 			int stoneY = 5;
 			int stoneCols[] = { 0, 4, 8, 12 };
@@ -487,7 +476,6 @@ void specialBlockSpawner(int numToSpawn)
 	}
 }
 
-// Removed: isStoneBlockThere function
 
 bool isDeleteBlock(int by, int bx)
 {
@@ -592,7 +580,6 @@ void resetGame()
 		}
 	}
 
-	// Removed code for decorative stone blocks
 }
 
 bool gameWinCheck()
@@ -602,7 +589,6 @@ bool gameWinCheck()
 	{
 		for (int x = 0; x < BLOCK_NUM_X; x++)
 		{
-			// Win if only empty (0) or indestructible (3) blocks remain
 			if (block[y][x] == 1 || block[y][x] == 2)
 			{
 				blocksRemaining = true;
@@ -689,7 +675,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 		resetGame();
 
-		// Alpha Blending for Start Screen (Optional, for consistency)
 		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
 		DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -717,9 +702,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 			MoveBar();
-			MoveBall(); // This now handles decrementing activeBallCount
+			MoveBall(); 
 
-			// Alpha Blending Fade Effect
+			
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
 			DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -728,8 +713,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			ScreenFlip();
 
-			// Check end conditions AFTER drawing, so messages appear
-			if (gameOverCheck() == true) // This now handles lives logic
+			if (gameOverCheck() == true)
 			{
 				break;
 			}
