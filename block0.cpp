@@ -75,7 +75,7 @@ int currentBarSizeX;
 
 void Draw()
 {
-	static int GrHandle = LoadGraph("gamebg.bmp");
+	static int GrHandle = LoadGraph("gamebackground.png");
 	static int colorBlock = LoadGraph("block.bmp");
 	static int stoneBlockHandle = LoadGraph("stone.bmp"); // Handle for type 3
 	static int specialBlockHandle = LoadGraph("specialBlock.bmp"); // Handle for type 2
