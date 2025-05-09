@@ -669,8 +669,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bgmHandler = LoadSoundMem("bgm.mp3");
 	blockHitSoundHandler = LoadSoundMem("block_hit.wav");
 	barHitSoundHandler = LoadSoundMem("bar_hit.wav");
-	specialHitSoundHandler = LoadSoundMem("special_hit.wav"); // Use distinct sound if available
-	stoneHitSoundHandler = LoadSoundMem("bar_hit.wav"); // Reuse bar sound for stone
+	specialHitSoundHandler = LoadSoundMem("special_hit.mp3"); // Use distinct sound if available
+	stoneHitSoundHandler = LoadSoundMem("stone_hit.mp3");
 
 	if (bgmHandler == -1 || blockHitSoundHandler == -1 || barHitSoundHandler == -1)
 	{
