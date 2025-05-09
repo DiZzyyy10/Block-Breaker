@@ -28,6 +28,7 @@ int ball_x = bar_x + BAR_SIZE_X / 2;//ball中心のx座標
 int ball_y = bar_y - BALL_SIZE;//ball中心のy座標
 int block[BLOCK_NUM_Y][BLOCK_NUM_X];
 int BlockHandle[BLOCK_NUM_Y];
+int blockDesign[BLOCK_NUM_Y][BLOCK_NUM_X];
 
 const int maxNumOfBall = 100;
 
@@ -79,11 +80,6 @@ void Draw()
 	static int stoneBlockHandle = LoadGraph("stone.bmp"); // Handle for type 3
 	static int specialBlockHandle = LoadGraph("specialBlock.bmp"); // Handle for type 2
 
-	if (GrHandle == -1) { DrawFormatString(10, 30, GetColor(255, 0, 0), "Error: gamebg.bmp failed!"); }
-	if (colorBlock == -1) { DrawFormatString(10, 40, GetColor(255, 0, 0), "Error: block.bmp failed!"); }
-	if (stoneBlockHandle == -1) { DrawFormatString(10, 50, GetColor(255, 0, 0), "Error: stone.bmp failed!"); }
-	if (specialBlockHandle == -1) { DrawFormatString(10, 60, GetColor(255, 0, 0), "Error: specialBlock.bmp failed!"); }
-
 	DrawGraph(0, 0, GrHandle, FALSE);
 	DrawBox(bar_x, bar_y, bar_x + currentBarSizeX, bar_y + BAR_SIZE_Y, GetColor(255, 255, 255), TRUE);
 
@@ -102,25 +98,25 @@ void Draw()
 		{
 			int blockType = block[y][x];
 
-			if (blockType == 1)
+			if (blockType == 1) // Standard breakable block
 			{
-				int srcX = y * BLOCK_SIZE_X;
-				if (srcX >= 240) srcX = 200;
+				int designIndex = blockDesign[y][x]; // Get the stored design index
+				int srcX = designIndex * BLOCK_SIZE_X;
+
 				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
 					srcX, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
-					colorBlock, FALSE, FALSE);
+					colorBlock, // Use the handle for your cute spritesheet
+					FALSE, FALSE);
 			}
 			else if (blockType == 2)
 			{
 				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
-					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
-					specialBlockHandle, FALSE, FALSE);
+					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y, specialBlockHandle, FALSE, FALSE);
 			}
 			else if (blockType == 3) // Draw indestructible stone block
 			{
 				DrawRectGraph(x * BLOCK_SIZE_X, BLOCK_TOP_Y + y * BLOCK_SIZE_Y,
-					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y,
-					stoneBlockHandle, FALSE, FALSE);
+					0, 0, BLOCK_SIZE_X, BLOCK_SIZE_Y, stoneBlockHandle, FALSE, FALSE);
 			}
 		}
 	}
@@ -580,6 +576,21 @@ void resetGame()
 		}
 	}
 
+
+	const int NUM_CUTE_BLOCK_DESIGNS = 6;
+
+	for (int y = 0; y < BLOCK_NUM_Y; ++y) {
+		for (int x = 0; x < BLOCK_NUM_X; ++x) {
+			block[y][x] = 1; 
+
+			if (block[y][x] == 1) {
+				blockDesign[y][x] = rand() % NUM_CUTE_BLOCK_DESIGNS;
+			}
+			else {
+				blockDesign[y][x] = 0; 
+			}
+		}
+	}
 }
 
 bool gameWinCheck()
