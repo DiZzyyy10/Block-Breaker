@@ -491,10 +491,18 @@ bool playAgainPrompt()
 {
 	ClearDrawScreen();
 	static int playAgainBackground = LoadGraph("playagain.bmp");
-	if (playAgainBackground != -1) DrawGraph(0, 0, playAgainBackground, FALSE);
-	else DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 50), TRUE);
+	if (playAgainBackground != -1) 
+	{ 
+		DrawGraph(0, 0, playAgainBackground, FALSE); 
+	}
+	else
+	{
+		DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 50), TRUE);
+	}
+
 	DrawFormatString(WINDOW_SIZE_X / 2 - 80, WINDOW_SIZE_Y / 2 - 20, GetColor(255, 255, 255), "Play Again? (Y/N)");
 	ScreenFlip(); WaitTimer(50);
+
 	while (1) {
 		if (ProcessMessage() == -1) return false;
 		if (CheckHitKey(KEY_INPUT_Y)) { WaitTimer(200); return true; }
@@ -506,7 +514,7 @@ bool playAgainPrompt()
 // Main Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	SetMainWindowText("ブロック崩し見本 by 橋本");
+	SetMainWindowText("ブロック崩しゲーム");
 	ChangeWindowMode(TRUE);
 	if (DxLib_Init() == -1) return -1;
 
@@ -514,7 +522,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetMouseDispFlag(TRUE);
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	// Load sounds
+	//sounds
 	bgmHandler = LoadSoundMem("bgm.mp3");
 	blockHitSoundHandler = LoadSoundMem("block_hit.wav");
 	barHitSoundHandler = LoadSoundMem("bar_hit.wav");
@@ -522,8 +530,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	stoneHitSoundHandler = LoadSoundMem("stone_hit.mp3");
 
 	if (bgmHandler == -1 || blockHitSoundHandler == -1 || barHitSoundHandler == -1) { DxLib_End(); return -1; }
-	if (specialHitSoundHandler == -1) specialHitSoundHandler = blockHitSoundHandler; // Fallback
-	if (stoneHitSoundHandler == -1) stoneHitSoundHandler = barHitSoundHandler;     // Fallback
+	if (specialHitSoundHandler == -1) specialHitSoundHandler = blockHitSoundHandler; 
+	if (stoneHitSoundHandler == -1) stoneHitSoundHandler = barHitSoundHandler;     
 
 	PlaySoundMem(bgmHandler, DX_PLAYTYPE_LOOP, TRUE);
 
@@ -531,53 +539,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	long long currentTime = 0;
 	float deltaTime = 0.0f;
 
-	// Outer loop for playing multiple games
 	while (1)
 	{
 		resetGame();
 
-		// "Press Space to Start" screen
 		Draw();
 		DrawFormatString(WINDOW_SIZE_X / 2 - 100, WINDOW_SIZE_Y / 2 + 40, GetColor(255, 255, 0), "Press SPACE to Start");
 		ScreenFlip();
 
-		while (!CheckHitKey(KEY_INPUT_SPACE)) { // Wait for start
+		while (!CheckHitKey(KEY_INPUT_SPACE)) { 
 			if (ProcessMessage() == -1) { DxLib_End(); return 0; }
-			lastFrameTime = GetNowCount(); // Keep updating lastFrameTime to prevent large initial deltaTime
+			lastFrameTime = GetNowCount(); 
 			WaitTimer(10);
 		}
-		lastFrameTime = GetNowCount(); // Reset timer just before gameplay starts
 
-		// Active gameplay loop
+		lastFrameTime = GetNowCount(); //reset timer just before gameplay starts
+
+
+		//main
 		while (1)
 		{
 			currentTime = GetNowCount();
 			deltaTime = (currentTime - lastFrameTime) / 1000.0f;
 			lastFrameTime = currentTime;
 
-			if (deltaTime > 0.1f) deltaTime = 0.1f;           // Cap deltaTime to prevent large jumps
-			if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f; // Safety net for invalid deltaTime
+			//incase dt's broken lmaooo
+			if (deltaTime > 0.1f) deltaTime = 0.1f;           
+			if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f; 
 
-			if (ProcessMessage() == -1) { DxLib_End(); return 0; } // Handle window close
+			if (ProcessMessage() == -1) { DxLib_End(); return 0; } 
 
 			MoveBar(deltaTime);
 			MoveBall(deltaTime);
 
-			// Trail effect: Draw a semi-transparent black box over the screen
-			// Increase alpha (e.g., to 128 or 192) for shorter/fainter trails.
-			// Comment out these three lines for no trail.
-			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160); // Alpha value for trail (e.g., 64, 128, 192)
-			DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
-			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+			
+			//SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160); // Alpha value for trail (e.g., 64, 128, 192)
+			//DrawBox(0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y, GetColor(0, 0, 0), TRUE);
+			//SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-			Draw(); // Draw all game elements
+			Draw();
 			ScreenFlip();
 
-			if (gameOverCheck() || gameWinCheck()) break; // Exit gameplay loop on game over or win
+			if (gameOverCheck() || gameWinCheck()) break;
 		}
 
-		WaitTimer(1000); // Pause before "Play Again?" prompt
-		if (!playAgainPrompt()) break; // Exit outer loop if player chooses not to play again
+		WaitTimer(1000);
+		if (!playAgainPrompt()) break;
 	}
 
 	DxLib_End();
