@@ -1,62 +1,54 @@
-# Block
+# Block Breaker Game
 
-A classic Block Breaker (Arkanoid/Breakout style) game built for Windows using C and the DxLib library.
-
-Feel free to download the code, set it up, and test it out! We've included a few levels to make the gameplay challenging and fun.
+A classic block-breaking arcade game developed in C++ using the DxLib library. Test your reflexes and see how many levels you can clear!
 
 ## Features
 
-* Classic block-breaking gameplay.
-* Multiple levels.
-* Built with C and DxLib.
+* Classic block-breaking gameplay
+* Multiple levels with increasing difficulty
+* Score tracking
+* Player lives system
+* Variety of block types:
+    * Standard colored blocks (now with cute designs!)
+    * Special blocks that can trigger events (e.g., multiple balls)
+    * Indestructible stone blocks
+* Sound effects and background music
+* Adjustable paddle size and ball speed at higher levels
 
-## Requirements
+## Downloads
 
-* Windows Operating System.
-* A C compiler compatible with DxLib (like Visual Studio).
-* **DxLib Library:** This project requires the DxLib library, which is *not* included in this repository.
+You can download the latest playable version for Windows from the **[Releases Page](https://github.com/DiZzyyy10/Block-Breaker/releases)**.
 
-## Setup Instructions
+**How to Run:**
 
-1.  **Get the Code:** You have two options to get the project files:
+1.  Go to the [Releases Page](https://github.com/DiZzyyy10/Block-Breaker/releases).
+2.  Download the `.zip` file for the latest release (e.g., `BlockBreaker_vX.X.zip`).
+3.  Extract all the contents of the `.zip` file into a new folder on your computer.
+4.  Run `Block.exe` (or the similarly named executable file) from that folder.
+    * **Important:** Ensure all asset files (`.bmp`, `.wav`, `.mp3`) and any included DLL files (like those for DxLib) remain in the same folder as the executable for the game to work correctly.
 
-    * **Option A (Easier): Download ZIP**
-        1.  On the main page of this repository on GitHub, click the green **`< > Code`** button.
-        2.  Select **`Download ZIP`**.
-        3.  Save the ZIP file to your computer and then **extract** it. This will create the `Block` project folder.
+## How to Play
 
-    * **Option B (Using Git): Clone Repository**
-        1.  If you have Git installed, open a terminal or command prompt.
-        2.  Run the following commands (replace `<your-repository-url>` with the actual URL found on the GitHub page under the 'Code' button):
-            ```bash
-            git clone <your-repository-url>
-            cd Block
-            ```
-        3.  This will download the project files into a `Block` folder and navigate into it.
+* **Move Paddle:** Use the `LEFT` and `RIGHT` arrow keys.
+* **Launch Ball:** Press `SPACE` at the start of the game or after losing a life to launch the ball.
+* **Objective:** Clear all breakable blocks (colored and special) on the screen to advance to the next level or win the game. Avoid letting the ball fall below your paddle.
 
-2.  **Download DxLib:**
-    * Go to the official DxLib download page: [https://dxlib.xsrv.jp/dxdload.html](https://dxlib.xsrv.jp/dxdload.html)
-    * Download the version appropriate for your compiler (e.g., the Visual Studio version).
+## Development
 
-3.  **Extract and Place DxLib:**
-    * Extract the downloaded DxLib archive (it will likely create a folder named `DxLib` or similar).
-    * Move the extracted `DxLib` folder so that it sits **next to** the `Block` folder you downloaded or cloned in Step 1. Your directory structure should look like this:
+This game was developed using:
 
-        ```
-        Your_Projects_Folder/
-        ├── Block/       <-- This repository's code (contains .sln, .vcxproj, src/, etc.)
-        └── DxLib/       <-- The DxLib library folder you just downloaded and placed here
-        ```
+* **Language:** C++
+* **Library:** [DxLib](https://dxlib.xsrv.jp/) (A Japanese multimedia library for game development)
+* **IDE:** Primarily developed with Visual Studio 2022
 
-4.  **Configure Project (If Necessary):**
-    * The Visual Studio project (`.vcxproj`) included in the `Block` folder should already be configured with relative paths (`..\DxLib\...`) to find the library.
-    * If you encounter issues, double-check the project settings in Visual Studio:
-        * **Configuration Properties -> VC++ Directories -> Include Directories:** Should point to the DxLib include path (e.g., `$(SolutionDir)..\DxLib\プロジェクトに追加すべきファイル_VC用`).
-        * **Configuration Properties -> VC++ Directories -> Library Directories:** Should point to the DxLib library path (e.g., `$(SolutionDir)..\DxLib\プロジェクトに追加すべきファイル_VC用`).
-        * **Configuration Properties -> Linker -> Input -> Additional Dependencies:** Should include `DxLib.lib`, `DxUseCLib.lib`, etc.
+To build from source, you would need a C++ compiler (like the one in Visual Studio) and the DxLib library correctly set up in your development environment. The main game logic is in `block0.cpp`.
 
-5.  **Build and Run:**
-    * Open the Solution file (`.sln`) located inside the `Block` folder with Visual Studio.
-    * Select the desired build configuration (e.g., Debug or Release).
-    * Build the solution (F7 or Build -> Build Solution).
-    * Run the game (F5 or Debug -> Start Debugging).
+## Credits & Acknowledgements
+
+* This project was developed based on a hint program ("ブロック崩し プログラム ヒント") provided by Professor Tsuyoshi Hashimoto, Department of Information Engineering, Matsue National College of Technology.
+* Uses the [DxLib](https://dxlib.xsrv.jp/) library for graphics, sound, and input.
+* Custom block designs conceptualized and generated with assistance.
+
+---
+
+*Feel free to contribute, report issues, or suggest features!*
