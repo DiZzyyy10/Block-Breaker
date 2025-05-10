@@ -4,13 +4,45 @@
 
 	松江工業高等専門学校　情報工学科　教授　橋本　剛
 
+
+	氏名：チュオン　キムホック
+	学生番号：j2461
+	提出日：2023年10月23日
+
+	なゲームにしか？
+	ー＞複数のブロック種類が用意されている。
+	　　・普通のブロック：6種類もの可愛いブロックデザイン。ブールと衝突すると消える。
+	　　・特殊ブロック：衝突すると新しいボールが出現する。
+	  　・石ブロック：衝突しても消えない。ボールの反射角度を変えるだけ。
+	ー＞異なる７レベルがある。
+	ー＞ゲームには複数のライフがあり、すべてのボールがゲームからなくなった場合でも、プレイヤーはゲームに勝つために多くのライフが残っている。
+	ー＞ゲームの勝利条件は、すべてのブロックを消すこと。
+	ー＞ボールを消すことにより、得られるスコアと、レベルと残っているライフをスクリーンの上部分に表示する。
+
+	工夫をした部分は
+	ー＞ブロックのデザインをランダムに選ぶこと。
+	ー＞複数のボール同時に表示すること。
+	ー＞スペシャルブロックを他のブロックがないところにランダムに出現させること。
+	ー＞レベルが上がると、石ブロックが出現すること。
+	ー＞delta timeをコードに導入すること。元のソースコードに書いてあるアルゴリズムは「レンダーできるフレームでbarとボールを移動させる」と言うコンセプトで実行されたが、
+	それは、フレームレートが高いときに、ボールとbarの移動速度が速くなり、フレームレートが低いときに、ボールとbarの移動速度が遅くなることを意味する。つまり、コンピュータの
+	能力によって、ゲームの難易度が変わることになる。delta timeを導入することにより、フレームレートに関係なく、ボールとbarの移動速度を一定に保つことができる。delta time
+	のことは前回のレンダーのフレームと現在のフレームの時間差を計算することによって得られる。delta timeは、ボールとbarの移動速度に掛け算されることによって、フレームレート
+	に関係なく、ボールとbarの移動速度を一定に保つことができる。
+
+	アピールポイントは
+	ー＞ブロックのデザインをランダムに選ぶこと。
+	ー＞レベル２からレベル７まではスペシャルブロックが出現し、プレイヤーにゲームに勝つためのチャンスを与えること。
+	ー＞レベル4からレベル7までは、石ブロックが登場し、プレーヤーの難易度を上げている。
+	ー＞レベル５からレベル７までは、barのサイズが小さくなり、プレーヤーの難易度を上げている。
+
 *******************************************************************/
 #include "DxLib.h"
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
 
-//Game constants
+//game constants
 const int WINDOW_SIZE_X = 640;
 const int WINDOW_SIZE_Y = 480;
 const int BAR_SIZE_X = 200; 
@@ -22,7 +54,7 @@ const int BLOCK_NUM_X = WINDOW_SIZE_X / BLOCK_SIZE_X;
 const int BLOCK_NUM_Y = 6;
 const int BLOCK_TOP_Y = 40;
 
-//Global var
+//global var
 int bar_y = WINDOW_SIZE_Y * 9 / 10;
 float bar_x = WINDOW_SIZE_X / 2.0f - BAR_SIZE_X / 2.0f;
 int block[BLOCK_NUM_Y][BLOCK_NUM_X];
@@ -41,7 +73,7 @@ struct Ball
 Ball balls[maxNumOfBall];
 int activeBallCount = 0;
 
-//Speed factors for delta time adjustment, these guys are tunable!!!!!! <---
+//speed factors for delta time adjustment, these guys are tunable!!!!!! <---
 const float BALL_SPEED_FACTOR = 200.0f;
 const float BAR_SPEED_FACTOR = 220.0f;
 
@@ -252,7 +284,7 @@ void MoveBall(float deltaTime)
 	}
 }
 
-// Spawns a new ball
+
 void SpawnNewBall(const Ball& parentBall) 
 {
 	if (activeBallCount >= maxNumOfBall) return;
@@ -380,7 +412,7 @@ void specialBlockSpawner(int numToSpawn)
 		block[gapY[randomIndex]][gapX[randomIndex]] = 2;
 
 		gapX[randomIndex] = gapX[--gapCount]; 
-		gapY[randomIndex] = gapY[gapCount]; // Replace chosen with last and shrink
+		gapY[randomIndex] = gapY[gapCount]; //replace chosen with last and shrink
 	}
 }
 
@@ -439,17 +471,16 @@ void resetGame()
 	currentBarSizeX = BAR_SIZE_X;
 	bar_x = WINDOW_SIZE_X / 2.0f - currentBarSizeX / 2.0f;
 
-	//r ball state
 	activeBallCount = 1; 
 	balls[0].active = true;
-	//r ball position
+	
 	balls[0].x = bar_x + currentBarSizeX / 2.0f; 
 	balls[0].y = (float)bar_y - BALL_SIZE;
-	//r ball velocity
+	
 	balls[0].vx = (rand() % 2) * 2 - 1; 
 	balls[0].vy = -1;
 
-	//r block state
+	
 	for (int i = 1; i < maxNumOfBall; ++i) 
 	{
 		balls[i].active = false;
@@ -463,7 +494,7 @@ void resetGame()
 		}
 	}
 	
-	//set up block desgin. Basically we gonna rand() between 6, and put that number in the blockDesign[y][x] then gon pull that up when Draw() the block
+	//set up block desgin. Basically we gonna rand() between 6 and put that number in the blockDesign[y][x] then gon pull that up when Draw() the block
 	const int NUM_OF_BLOCK_DESIGNS = 6; 
 	for (int y = 0; y < BLOCK_NUM_Y; ++y) 
 	{
@@ -511,7 +542,7 @@ bool playAgainPrompt()
 	}
 }
 
-// Main Windows entry point
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	SetMainWindowText("ブロック崩しゲーム");
